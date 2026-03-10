@@ -3,15 +3,15 @@
 <head>
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>QR Quick Scanner</title>
+<title>QR Smart Scanner</title>
 
 <style>
 
 body{
 margin:0;
-font-family:monospace;
 background:#000;
 color:#00ff88;
+font-family:monospace;
 text-align:center;
 }
 
@@ -23,14 +23,15 @@ height:auto;
 #popup{
 
 position:fixed;
-bottom:-200px;
+bottom:-220px;
 left:0;
 width:100%;
 background:#111;
 padding:20px;
 border-top-left-radius:20px;
 border-top-right-radius:20px;
-transition:0.3s;
+transition:0.35s;
+
 }
 
 #popup.show{
@@ -38,7 +39,6 @@ bottom:0;
 }
 
 button{
-
 padding:12px;
 border:none;
 border-radius:10px;
@@ -46,7 +46,6 @@ background:#00ff88;
 color:#000;
 font-size:16px;
 margin-top:10px;
-
 }
 
 </style>
@@ -67,25 +66,30 @@ margin-top:10px;
 
 </div>
 
-
 <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
 
 <script>
 
 let video=document.getElementById("camera")
-
 let canvas=document.createElement("canvas")
 let ctx=canvas.getContext("2d")
+
+let scanning=true
 
 navigator.mediaDevices.getUserMedia({
 video:{facingMode:"environment"}
 }).then(stream=>{
 video.srcObject=stream
+video.play()
 requestAnimationFrame(scanQR)
 })
 
-
 function scanQR(){
+
+if(!scanning){
+requestAnimationFrame(scanQR)
+return
+}
 
 if(video.readyState===video.HAVE_ENOUGH_DATA){
 
@@ -100,9 +104,13 @@ let code=jsQR(imageData.data,canvas.width,canvas.height)
 
 if(code){
 
+scanning=false
+
 handleResult(code.data)
 
-return
+setTimeout(()=>{
+scanning=true
+},2000)
 
 }
 
@@ -115,14 +123,23 @@ requestAnimationFrame(scanQR)
 
 function handleResult(data){
 
-/* detect link */
+data=data.trim()
 
-if(data.startsWith("http://") || data.startsWith("https://")){
+/* detect links */
+
+let linkPattern=/^(https?:\/\/|www\.|mailto:|tel:)/i
+
+if(linkPattern.test(data)){
+
+if(!data.startsWith("http")){
+data="https://"+data
+}
 
 window.location.href=data
 return
 
 }
+
 
 /* detect contact */
 
@@ -132,6 +149,7 @@ saveContact(data)
 return
 
 }
+
 
 /* otherwise text */
 
@@ -143,7 +161,6 @@ showText(data)
 function showText(text){
 
 document.getElementById("textResult").innerText=text
-
 document.getElementById("popup").classList.add("show")
 
 }
@@ -153,7 +170,7 @@ function closePopup(){
 
 document.getElementById("popup").classList.remove("show")
 
-requestAnimationFrame(scanQR)
+scanning=true
 
 }
 
@@ -162,11 +179,11 @@ requestAnimationFrame(scanQR)
 
 function saveContact(vcard){
 
-let name=vcard.match(/FN:(.*)/)
-let phone=vcard.match(/TEL:(.*)/)
+let nameMatch=vcard.match(/FN:(.*)/)
+let phoneMatch=vcard.match(/TEL:(.*)/)
 
-name=name?name[1]:"Contact"
-phone=phone?phone[1]:""
+let name=nameMatch?nameMatch[1]:"Contact"
+let phone=phoneMatch?phoneMatch[1]:""
 
 let link=`contacts:?name=${encodeURIComponent(name)}&phone=${encodeURIComponent(phone)}`
 
@@ -177,4 +194,4 @@ window.location.href=link
 </script>
 
 </body>
-  </html>
+</html>
