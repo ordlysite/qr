@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html>
+<head>
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>QR Quick Scanner</title>
+
+<style>
+
+body{
+margin:0;
+font-family:monospace;
+background:#000;
+color:#00ff88;
+text-align:center;
+}
+
+video{
+width:100%;
+height:auto;
+}
+
+#popup{
+
+position:fixed;
+bottom:-200px;
+left:0;
+width:100%;
+background:#111;
+padding:20px;
+border-top-left-radius:20px;
+border-top-right-radius:20px;
+transition:0.3s;
+}
+
+#popup.show{
+bottom:0;
+}
+
+button{
+
+padding:12px;
+border:none;
+border-radius:10px;
+background:#00ff88;
+color:#000;
+font-size:16px;
+margin-top:10px;
+
+}
+
+</style>
+
+</head>
+
+<body>
+
+<h2>QR Scanner</h2>
+
+<video id="camera" autoplay playsinline></video>
+
+<div id="popup">
+
+<div id="textResult"></div>
+
+<button onclick="closePopup()">Close</button>
+
+</div>
+
+
+<script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
+
+<script>
+
+let video=document.getElementById("camera")
+
+let canvas=document.createElement("canvas")
+let ctx=canvas.getContext("2d")
+
+navigator.mediaDevices.getUserMedia({
+video:{facingMode:"environment"}
+}).then(stream=>{
+video.srcObject=stream
+requestAnimationFrame(scanQR)
+})
+
+
+function scanQR(){
+
+if(video.readyState===video.HAVE_ENOUGH_DATA){
+
+canvas.width=video.videoWidth
+canvas.height=video.videoHeight
+
+ctx.drawImage(video,0,0,canvas.width,canvas.height)
+
+let imageData=ctx.getImageData(0,0,canvas.width,canvas.height)
+
+let code=jsQR(imageData.data,canvas.width,canvas.height)
+
+if(code){
+
+handleResult(code.data)
+
+return
+
+}
+
+}
+
+requestAnimationFrame(scanQR)
+
+}
+
+
+function handleResult(data){
+
+/* detect link */
+
+if(data.startsWith("http://") || data.startsWith("https://")){
+
+window.location.href=data
+return
+
+}
+
+/* detect contact */
+
+if(data.includes("BEGIN:VCARD")){
+
+saveContact(data)
+return
+
+}
+
+/* otherwise text */
+
+showText(data)
+
+}
+
+
+function showText(text){
+
+document.getElementById("textResult").innerText=text
+
+document.getElementById("popup").classList.add("show")
+
+}
+
+
+function closePopup(){
+
+document.getElementById("popup").classList.remove("show")
+
+requestAnimationFrame(scanQR)
+
+}
+
+
+/* SAVE CONTACT */
+
+function saveContact(vcard){
+
+let name=vcard.match(/FN:(.*)/)
+let phone=vcard.match(/TEL:(.*)/)
+
+name=name?name[1]:"Contact"
+phone=phone?phone[1]:""
+
+let link=`contacts:?name=${encodeURIComponent(name)}&phone=${encodeURIComponent(phone)}`
+
+window.location.href=link
+
+}
+
+</script>
+
+</body>
+  </html>
