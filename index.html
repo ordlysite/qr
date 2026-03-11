@@ -205,13 +205,20 @@ function handleResult(data){
 
 data=data.trim()
 
-/* detect links */
+/* FIX WHATSAPP LINKS */
 
-let linkPattern=/^(https?:\/\/|www\.|mailto:|tel:|wa\.me)/i
+if(data.startsWith("wa.me")){
+data=data.replace("+","")
+data="https://"+data
+}
+
+/* FIX DOMAIN LINKS */
+
+let linkPattern=/^(https?:\/\/|www\.|mailto:|tel:|wa\.me|[a-z0-9.-]+\.[a-z]{2,})/i
 
 if(linkPattern.test(data)){
 
-if(!data.startsWith("http")){
+if(!data.startsWith("http") && !data.startsWith("mailto") && !data.startsWith("tel")){
 data="https://"+data
 }
 
@@ -220,16 +227,12 @@ return
 
 }
 
-
 /* detect contact */
 
 if(data.includes("BEGIN:VCARD")){
-
 saveContact(data)
 return
-
 }
-
 
 /* otherwise text */
 
