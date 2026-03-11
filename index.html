@@ -89,7 +89,6 @@ let scanning=true
 let streamTrack=null
 let torchOn=false
 
-
 /* START CAMERA */
 
 navigator.mediaDevices.getUserMedia({
@@ -104,14 +103,6 @@ video.srcObject=stream
 video.play()
 
 streamTrack=stream.getVideoTracks()[0]
-
-/* focus hint */
-
-streamTrack.applyConstraints({
-advanced:[
-{focusMode:"continuous"}
-]
-}).catch(()=>{})
 
 requestAnimationFrame(scanQR)
 
@@ -143,32 +134,31 @@ alert("Flash not supported on this device")
 }
 
 
-/* SCAN LOOP */
+/* FAST SCAN LOOP */
 
 function scanQR(){
 
 if(!scanning){
-requestAnimationFrame(scanQR)
+setTimeout(scanQR,80)
 return
 }
 
 if(video.readyState===video.HAVE_ENOUGH_DATA){
 
-canvas.width=video.videoWidth
-canvas.height=video.videoHeight
+/* smaller canvas for faster detection */
+
+canvas.width=640
+canvas.height=480
 
 ctx.drawImage(video,0,0,canvas.width,canvas.height)
 
-/* scan center square */
-let imageData = ctx.getImageData(0, 0, canvas.width, canvas.height)
+let imageData=ctx.getImageData(0,0,canvas.width,canvas.height)
 
-let code = jsQR(imageData.data, canvas.width, canvas.height)
+let code=jsQR(imageData.data,canvas.width,canvas.height)
 
 if(code){
 
 scanning=false
-
-/* vibration */
 
 if(navigator.vibrate){
 navigator.vibrate(200)
@@ -184,7 +174,7 @@ scanning=true
 
 }
 
-requestAnimationFrame(scanQR)
+setTimeout(scanQR,80)
 
 }
 
