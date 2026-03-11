@@ -21,7 +21,6 @@ height:auto;
 }
 
 #popup{
-
 position:fixed;
 bottom:-220px;
 left:0;
@@ -31,7 +30,6 @@ padding:20px;
 border-top-left-radius:20px;
 border-top-right-radius:20px;
 transition:0.35s;
-
 }
 
 #popup.show{
@@ -47,7 +45,7 @@ color:#000;
 font-size:16px;
 margin-top:10px;
 }
-  
+
 #scanBox{
 position:absolute;
 top:50%;
@@ -59,6 +57,7 @@ transform:translate(-50%,-50%);
 box-shadow:0 0 0 2000px rgba(0,0,0,0.5);
 pointer-events:none;
 }
+
 </style>
 
 </head>
@@ -68,18 +67,15 @@ pointer-events:none;
 <h2>QR Scanner</h2>
 
 <video id="camera" autoplay playsinline></video>
-  <div id="scanBox"></div>
+
+<div id="scanBox"></div>
 
 <button id="flashBtn" onclick="toggleFlash()">Flash ON</button>
 
 <div id="popup">
-
 <div id="textResult"></div>
-
 <button onclick="closePopup()">Close</button>
-
 </div>
-
 
 <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
 
@@ -90,12 +86,18 @@ let canvas=document.createElement("canvas")
 let ctx=canvas.getContext("2d")
 
 let scanning=true
-
 let streamTrack=null
 let torchOn=false
 
+
+/* START CAMERA */
+
 navigator.mediaDevices.getUserMedia({
-video:{facingMode:"environment"}
+video:{
+facingMode:"environment",
+width:{ideal:1280},
+height:{ideal:720}
+}
 }).then(stream=>{
 
 video.srcObject=stream
@@ -103,24 +105,19 @@ video.play()
 
 streamTrack=stream.getVideoTracks()[0]
 
-requestAnimationFrame(scanQR)
-
-})
-
-
-l
-
-
-
-/* trigger camera refocus by toggling exposure */
+/* focus hint */
 
 streamTrack.applyConstraints({
 advanced:[
-{exposureMode:"continuous"},
 {focusMode:"continuous"}
 ]
 }).catch(()=>{})
 
+requestAnimationFrame(scanQR)
+
+}).catch(err=>{
+alert("Camera access failed")
+console.log(err)
 })
 
 
@@ -146,6 +143,7 @@ alert("Flash not supported on this device")
 }
 
 
+/* SCAN LOOP */
 
 function scanQR(){
 
@@ -161,8 +159,9 @@ canvas.height=video.videoHeight
 
 ctx.drawImage(video,0,0,canvas.width,canvas.height)
 
-let size=Math.min(canvas.width,canvas.height)*0.5
+/* scan center square */
 
+let size=Math.min(canvas.width,canvas.height)*0.5
 let x=(canvas.width-size)/2
 let y=(canvas.height-size)/2
 
@@ -174,7 +173,7 @@ if(code){
 
 scanning=false
 
-/* VIBRATION FEEDBACK */
+/* vibration */
 
 if(navigator.vibrate){
 navigator.vibrate(200)
@@ -194,6 +193,8 @@ requestAnimationFrame(scanQR)
 
 }
 
+
+/* HANDLE RESULTS */
 
 function handleResult(data){
 
@@ -218,37 +219,32 @@ data="https://"+data
 
 window.location.href=data
 return
-
 }
 
-/* detect contact */
+/* CONTACT */
 
 if(data.includes("BEGIN:VCARD")){
 saveContact(data)
 return
 }
 
-/* otherwise text */
+/* TEXT */
 
 showText(data)
 
 }
 
 
-function showText(text){
+/* TEXT POPUP */
 
+function showText(text){
 document.getElementById("textResult").innerText=text
 document.getElementById("popup").classList.add("show")
-
 }
 
-
 function closePopup(){
-
 document.getElementById("popup").classList.remove("show")
-
 scanning=true
-
 }
 
 
