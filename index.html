@@ -47,16 +47,17 @@ color:#000;
 font-size:16px;
 margin-top:10px;
 }
-#focusRing{
+  
+#scanBox{
 position:absolute;
-width:80px;
-height:80px;
+top:50%;
+left:50%;
+width:250px;
+height:250px;
 border:3px solid #00ff88;
-border-radius:50%;
-pointer-events:none;
-opacity:0;
 transform:translate(-50%,-50%);
-transition:opacity 0.3s ease;
+box-shadow:0 0 0 2000px rgba(0,0,0,0.5);
+pointer-events:none;
 }
 </style>
 
@@ -67,8 +68,8 @@ transition:opacity 0.3s ease;
 <h2>QR Scanner</h2>
 
 <video id="camera" autoplay playsinline></video>
-  
-<div id="focusRing"></div>
+  <div id="scanBox"></div>
+
 <button id="flashBtn" onclick="toggleFlash()">Flash ON</button>
 
 <div id="popup">
@@ -107,21 +108,9 @@ requestAnimationFrame(scanQR)
 })
 
 
-/* TAP TO FOCUS */
+l
 
-video.addEventListener("click",(e)=>{
 
-if(!streamTrack) return
-
-let ring=document.getElementById("focusRing")
-
-ring.style.left=e.clientX+"px"
-ring.style.top=e.clientY+"px"
-ring.style.opacity=1
-
-setTimeout(()=>{
-ring.style.opacity=0
-},800)
 
 /* trigger camera refocus by toggling exposure */
 
@@ -172,9 +161,14 @@ canvas.height=video.videoHeight
 
 ctx.drawImage(video,0,0,canvas.width,canvas.height)
 
-let imageData=ctx.getImageData(0,0,canvas.width,canvas.height)
+let size=Math.min(canvas.width,canvas.height)*0.5
 
-let code=jsQR(imageData.data,canvas.width,canvas.height)
+let x=(canvas.width-size)/2
+let y=(canvas.height-size)/2
+
+let imageData=ctx.getImageData(x,y,size,size)
+
+let code=jsQR(imageData.data,size,size)
 
 if(code){
 
